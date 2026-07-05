@@ -44,6 +44,7 @@ Built for anyone who wants smarter style decisions without the guesswork.
 - **Shopping Suggestions** — AI identifies missing pieces that unlock new outfits
 - **Rose Mist design system** — premium JPH ecosystem aesthetic
 - **JPH splash screen** — custom boot animation with shark logo
+- **Onboarding flow** — three-slide intro to Color AI, Wardrobe, and daily outfits
 
 ## Tech Stack
 

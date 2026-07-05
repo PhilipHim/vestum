@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   outfitHistory: 'vestum_outfit_history',
   colorPalette: 'vestum_color_palette',
   settings: 'vestum_settings',
+  onboarded: 'vestum_onboarded_v1',
 } as const;
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -108,6 +109,15 @@ export async function getSettings(): Promise<UserSettings> {
 
 export async function saveSettings(settings: UserSettings): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
+}
+
+export async function isOnboarded(): Promise<boolean> {
+  const value = await AsyncStorage.getItem(STORAGE_KEYS.onboarded);
+  return value === 'true';
+}
+
+export async function setOnboarded(): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.onboarded, 'true');
 }
 
 export function computeNeverWornPercent(items: WardrobeItem[]): number {

@@ -13,9 +13,11 @@ import {
   getOutfitHistory,
   getSettings,
   getWardrobe,
+  isOnboarded,
   removeWardrobeItem,
   saveColorPalette,
   saveSettings,
+  setOnboarded,
 } from '@/src/services/storage';
 import { fetchWeather } from '@/src/services/weatherService';
 
@@ -27,6 +29,8 @@ interface AppContextValue {
   weather: WeatherInfo | null;
   dailyOutfit: DailyOutfitRecommendation | null;
   ready: boolean;
+  onboarded: boolean | null;
+  completeOnboarding: () => Promise<void>;
   refreshWardrobe: () => Promise<void>;
   refreshHistory: () => Promise<void>;
   refreshPalette: () => Promise<void>;
@@ -51,18 +55,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [dailyOutfit, setDailyOutfit] = useState<DailyOutfitRecommendation | null>(null);
   const [ready, setReady] = useState(false);
+  const [onboarded, setOnboardedState] = useState<boolean | null>(null);
 
   const load = useCallback(async () => {
-    const [items, history, palette, userSettings] = await Promise.all([
+    const [items, history, palette, userSettings, onboardedFlag] = await Promise.all([
       getWardrobe(),
       getOutfitHistory(),
       getColorPalette(),
       getSettings(),
+      isOnboarded(),
     ]);
     setWardrobe(items);
     setOutfitHistory(history);
     setColorPaletteState(palette);
     setSettingsState(userSettings);
+    setOnboardedState(onboardedFlag);
 
     const weatherData = await fetchWeather(userSettings.useLocation);
     setWeather(weatherData);
@@ -113,6 +120,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [settings.useLocation]);
 
+  const completeOnboarding = useCallback(async () => {
+    await setOnboarded();
+    setOnboardedState(true);
+  }, []);
+
   const value = useMemo<AppContextValue>(
     () => ({
       wardrobe,
@@ -122,6 +134,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       weather,
       dailyOutfit,
       ready,
+      onboarded,
+      completeOnboarding,
       refreshWardrobe,
       refreshHistory,
       refreshPalette,
@@ -140,6 +154,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       weather,
       dailyOutfit,
       ready,
+      onboarded,
+      completeOnboarding,
       refreshWardrobe,
       refreshHistory,
       refreshPalette,
