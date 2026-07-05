@@ -17,6 +17,7 @@ import {
   removeWardrobeItem,
   saveColorPalette,
   saveSettings,
+  clearOnboarded,
   setOnboarded,
 } from '@/src/services/storage';
 import { fetchWeather } from '@/src/services/weatherService';
@@ -31,6 +32,7 @@ interface AppContextValue {
   ready: boolean;
   onboarded: boolean | null;
   completeOnboarding: () => Promise<void>;
+  resetOnboarding: () => Promise<void>;
   refreshWardrobe: () => Promise<void>;
   refreshHistory: () => Promise<void>;
   refreshPalette: () => Promise<void>;
@@ -125,6 +127,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setOnboardedState(true);
   }, []);
 
+  const resetOnboarding = useCallback(async () => {
+    await clearOnboarded();
+    setOnboardedState(false);
+  }, []);
+
   const value = useMemo<AppContextValue>(
     () => ({
       wardrobe,
@@ -136,6 +143,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ready,
       onboarded,
       completeOnboarding,
+      resetOnboarding,
       refreshWardrobe,
       refreshHistory,
       refreshPalette,
@@ -156,6 +164,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ready,
       onboarded,
       completeOnboarding,
+      resetOnboarding,
       refreshWardrobe,
       refreshHistory,
       refreshPalette,

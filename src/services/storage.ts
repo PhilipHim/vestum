@@ -120,6 +120,10 @@ export async function setOnboarded(): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEYS.onboarded, 'true');
 }
 
+export async function clearOnboarded(): Promise<void> {
+  await AsyncStorage.removeItem(STORAGE_KEYS.onboarded);
+}
+
 export function computeNeverWornPercent(items: WardrobeItem[]): number {
   if (items.length === 0) return 0;
   const neverWorn = items.filter((item) => item.wearCount === 0).length;

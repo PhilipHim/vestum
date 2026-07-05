@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MapPin, Bell, Users, Palette } from 'lucide-react-native';
 import PremiumCard from '@/src/components/PremiumCard';
@@ -9,7 +10,8 @@ import { useApp } from '@/src/context/AppContext';
 import { ACCENT, COLORS, ICON_STROKE } from '@/src/themes/rn-tokens';
 
 export default function ProfileScreen() {
-  const { colorPalette, settings, updateSettings } = useApp();
+  const router = useRouter();
+  const { colorPalette, settings, updateSettings, resetOnboarding } = useApp();
   const [friendRating, setFriendRating] = useState(0);
 
   const toggleNotifications = useCallback(
@@ -101,6 +103,19 @@ export default function ProfileScreen() {
         </PremiumCard>
 
         <Text style={s.footer}>Vestum by JPH Product Studio</Text>
+
+        {__DEV__ && (
+          <TouchableOpacity
+            style={s.devReset}
+            onPress={async () => {
+              await resetOnboarding();
+              router.replace('/onboarding');
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={s.devResetText}>Reset onboarding (Dev)</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -194,5 +209,18 @@ const s = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginTop: 8,
+  },
+  devReset: {
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+  },
+  devResetText: {
+    color: COLORS.mutedDark,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
