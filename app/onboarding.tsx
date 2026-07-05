@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -12,33 +12,32 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloudSun, Shirt, Sparkles } from 'lucide-react-native';
 import { useApp } from '@/src/context/AppContext';
+import type { TranslationKey } from '@/src/i18n';
 import { ACCENT, COLORS, ICON_STROKE, MIN_TOUCH } from '@/src/themes/rn-tokens';
 
 const { width } = Dimensions.get('window');
 
-const SLIDES = [
-  {
-    icon: Sparkles,
-    title: 'Discover your color season',
-    body: 'Upload a selfie and let AI analyze your skin tone, hair, and eyes to find your perfect seasonal palette.',
-  },
-  {
-    icon: Shirt,
-    title: 'Build your digital wardrobe',
-    body: 'Photograph your clothes and Vestum categorizes each piece by type, color, and season automatically.',
-  },
-  {
-    icon: CloudSun,
-    title: 'Dress smart every day',
-    body: 'Get weather-aware outfit suggestions that match your palette and avoid repeating looks from the last 7 days.',
-  },
+const SLIDE_KEYS = [
+  { icon: Sparkles, titleKey: 'onboarding1Title' as TranslationKey, bodyKey: 'onboarding1Body' as TranslationKey },
+  { icon: Shirt, titleKey: 'onboarding2Title' as TranslationKey, bodyKey: 'onboarding2Body' as TranslationKey },
+  { icon: CloudSun, titleKey: 'onboarding3Title' as TranslationKey, bodyKey: 'onboarding3Body' as TranslationKey },
 ];
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { completeOnboarding } = useApp();
+  const { completeOnboarding, t } = useApp();
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList>(null);
+
+  const slides = useMemo(
+    () =>
+      SLIDE_KEYS.map((slide) => ({
+        ...slide,
+        title: t(slide.titleKey),
+        body: t(slide.bodyKey),
+      })),
+    [t],
+  );
 
   const finish = async () => {
     await completeOnboarding();
@@ -46,7 +45,7 @@ export default function OnboardingScreen() {
   };
 
   const goNext = () => {
-    if (index < SLIDES.length - 1) {
+    if (index < slides.length - 1) {
       const next = index + 1;
       listRef.current?.scrollToIndex({ index: next, animated: true });
       setIndex(next);
@@ -59,20 +58,20 @@ export default function OnboardingScreen() {
     if (viewableItems[0]?.index != null) setIndex(viewableItems[0].index);
   }).current;
 
-  const isLast = index === SLIDES.length - 1;
+  const isLast = index === slides.length - 1;
 
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom']}>
       <View style={s.skipRow}>
         <TouchableOpacity onPress={finish} style={s.skipBtn} hitSlop={12}>
-          <Text style={s.skipText}>Skip</Text>
+          <Text style={s.skipText}>{t('skip')}</Text>
         </TouchableOpacity>
       </View>
 
       <FlatList
         ref={listRef}
-        data={SLIDES}
-        keyExtractor={(item) => item.title}
+        data={slides}
+        keyExtractor={(item) => item.titleKey}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -94,12 +93,12 @@ export default function OnboardingScreen() {
 
       <View style={s.footer}>
         <View style={s.dots}>
-          {SLIDES.map((slide, i) => (
-            <View key={slide.title} style={[s.dot, i === index && s.dotActive]} />
+          {slides.map((slide, i) => (
+            <View key={slide.titleKey} style={[s.dot, i === index && s.dotActive]} />
           ))}
         </View>
         <TouchableOpacity style={s.nextBtn} onPress={goNext} activeOpacity={0.85}>
-          <Text style={s.nextText}>{isLast ? 'Get started' : 'Next'}</Text>
+          <Text style={s.nextText}>{isLast ? t('getStarted') : t('next')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

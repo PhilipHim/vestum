@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
 import SplashScreenComponent from '@/src/components/SplashScreen';
+import { ToastProvider } from '@/src/components/Toast';
 import { AppProvider, useApp } from '@/src/context/AppContext';
 import { COLORS } from '@/src/themes/rn-tokens';
 
@@ -23,6 +24,9 @@ function NavigationGate() {
       <Stack.Screen name="index" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="season-change" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="wardrobe/[id]" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="outfit/[date]" options={{ animation: 'slide_from_right' }} />
     </Stack>
   );
 }
@@ -44,9 +48,11 @@ function RootContent() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AppProvider>
-        <RootContent />
-      </AppProvider>
+      <ToastProvider>
+        <AppProvider>
+          <RootContent />
+        </AppProvider>
+      </ToastProvider>
     </SafeAreaProvider>
   );
 }

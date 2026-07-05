@@ -1,10 +1,10 @@
 import { Redirect, Tabs } from 'expo-router';
-import { Home, Shirt, Sparkles, User } from 'lucide-react-native';
+import { Calendar, Home, Shirt, Sparkles, User } from 'lucide-react-native';
 import { useApp } from '@/src/context/AppContext';
 import { ACCENT, COLORS, ICON_STROKE } from '@/src/themes/rn-tokens';
 
 export default function TabLayout() {
-  const { onboarded } = useApp();
+  const { onboarded, t } = useApp();
 
   if (onboarded === false) {
     return <Redirect href="/onboarding" />;
@@ -33,7 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabHome'),
           tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} strokeWidth={ICON_STROKE} />
           ),
@@ -42,7 +42,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="wardrobe"
         options={{
-          title: 'Wardrobe',
+          title: t('tabWardrobe'),
           tabBarIcon: ({ color, size }) => (
             <Shirt size={size} color={color} strokeWidth={ICON_STROKE} />
           ),
@@ -51,16 +51,25 @@ export default function TabLayout() {
       <Tabs.Screen
         name="color-ai"
         options={{
-          title: 'Color AI',
+          title: t('tabColorAi'),
           tabBarIcon: ({ color, size }) => (
             <Sparkles size={size} color={color} strokeWidth={ICON_STROKE} />
           ),
         }}
       />
       <Tabs.Screen
+        name="calendar"
+        options={{
+          title: t('tabCalendar'),
+          tabBarIcon: ({ color, size }) => (
+            <Calendar size={size} color={color} strokeWidth={ICON_STROKE} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabProfile'),
           tabBarIcon: ({ color, size }) => (
             <User size={size} color={color} strokeWidth={ICON_STROKE} />
           ),

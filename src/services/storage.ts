@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   ColorPaletteResult,
   OutfitHistoryEntry,
+  OutfitOfTheDay,
+  SavedOutfit,
   UserSettings,
   WardrobeItem,
 } from '@/src/types';
@@ -9,6 +11,9 @@ import type {
 export const STORAGE_KEYS = {
   wardrobe: 'vestum_wardrobe',
   outfitHistory: 'vestum_outfit_history',
+  savedOutfits: 'vestum_saved_outfits',
+  outfitOfDay: 'vestum_outfit_of_day',
+  outfitOfDayDate: 'vestum_outfit_of_day_date',
   colorPalette: 'vestum_color_palette',
   settings: 'vestum_settings',
   onboarded: 'vestum_onboarded_v1',
@@ -17,7 +22,12 @@ export const STORAGE_KEYS = {
 const DEFAULT_SETTINGS: UserSettings = {
   notificationsEnabled: true,
   useLocation: true,
+  language: 'en',
 };
+
+export function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export async function getWardrobe(): Promise<WardrobeItem[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEYS.wardrobe);
@@ -47,6 +57,16 @@ export async function removeWardrobeItem(id: string): Promise<WardrobeItem[]> {
   return updated;
 }
 
+export async function updateWardrobeItem(
+  id: string,
+  patch: Partial<WardrobeItem>,
+): Promise<WardrobeItem[]> {
+  const existing = await getWardrobe();
+  const updated = existing.map((item) => (item.id === id ? { ...item, ...patch } : item));
+  await saveWardrobe(updated);
+  return updated;
+}
+
 export async function getOutfitHistory(): Promise<OutfitHistoryEntry[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEYS.outfitHistory);
   if (!raw) return [];
@@ -61,22 +81,47 @@ export async function saveOutfitHistory(history: OutfitHistoryEntry[]): Promise<
   await AsyncStorage.setItem(STORAGE_KEYS.outfitHistory, JSON.stringify(history));
 }
 
-export async function recordOutfitWorn(itemIds: string[]): Promise<OutfitHistoryEntry[]> {
-  const today = new Date().toISOString().slice(0, 10);
-  const existing = await getOutfitHistory();
-  const newEntries = itemIds.map((itemId) => ({ itemId, wornDate: today }));
-  const updated = [...newEntries, ...existing];
-  await saveOutfitHistory(updated);
+export async function getSavedOutfits(): Promise<SavedOutfit[]> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEYS.savedOutfits);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as SavedOutfit[];
+  } catch {
+    return [];
+  }
+}
 
-  const wardrobe = await getWardrobe();
-  const updatedWardrobe = wardrobe.map((item) =>
-    itemIds.includes(item.id)
-      ? { ...item, lastWorn: today, wearCount: item.wearCount + 1 }
-      : item,
-  );
-  await saveWardrobe(updatedWardrobe);
+export async function saveSavedOutfits(outfits: SavedOutfit[]): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.savedOutfits, JSON.stringify(outfits));
+}
 
+export async function addSavedOutfit(outfit: SavedOutfit): Promise<SavedOutfit[]> {
+  const existing = await getSavedOutfits();
+  const filtered = existing.filter((o) => o.date !== outfit.date);
+  const updated = [outfit, ...filtered];
+  await saveSavedOutfits(updated);
   return updated;
+}
+
+export async function getOutfitOfDayDate(): Promise<string | null> {
+  return AsyncStorage.getItem(STORAGE_KEYS.outfitOfDayDate);
+}
+
+export async function getOutfitOfDay(): Promise<OutfitOfTheDay | null> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEYS.outfitOfDay);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as OutfitOfTheDay;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveOutfitOfDay(outfit: OutfitOfTheDay): Promise<void> {
+  await AsyncStorage.multiSet([
+    [STORAGE_KEYS.outfitOfDay, JSON.stringify(outfit)],
+    [STORAGE_KEYS.outfitOfDayDate, todayKey()],
+  ]);
 }
 
 export async function getColorPalette(): Promise<ColorPaletteResult | null> {
@@ -134,4 +179,13 @@ export function getOutOfSeasonUnworn(items: WardrobeItem[], currentSeason: strin
   return items.filter(
     (item) => item.wearCount === 0 && item.season.toLowerCase() !== currentSeason.toLowerCase(),
   );
+}
+
+export function getOppositeSeason(season: string): string {
+  const s = season.toLowerCase();
+  if (s === 'spring') return 'Autumn';
+  if (s === 'summer') return 'Winter';
+  if (s === 'autumn') return 'Spring';
+  if (s === 'winter') return 'Summer';
+  return 'Summer';
 }

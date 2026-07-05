@@ -3,6 +3,9 @@ import type {
   ColorPaletteResult,
   DailyOutfitRecommendation,
   OutfitHistoryEntry,
+  OutfitOfTheDay,
+  SavedOutfit,
+  TrendCheckResult,
   UserSettings,
   WardrobeItem,
 } from '@/src/types';
@@ -79,6 +82,80 @@ export function validateClothingCategory(data: unknown): ClothingCategory | null
   };
 }
 
+export function validateOutfitOfTheDay(data: unknown): OutfitOfTheDay | null {
+  if (!data || typeof data !== 'object') return null;
+  const obj = data as Record<string, unknown>;
+
+  if (!isString(obj.top)) return null;
+  if (!isString(obj.bottom)) return null;
+  if (obj.optional_layer !== null && !isString(obj.optional_layer)) return null;
+  if (!isString(obj.shoes_hint)) return null;
+  if (!isString(obj.reason)) return null;
+
+  return {
+    top: obj.top,
+    bottom: obj.bottom,
+    optional_layer: obj.optional_layer as string | null,
+    shoes_hint: obj.shoes_hint,
+    reason: obj.reason,
+    shopping_suggestion:
+      obj.shopping_suggestion === null || obj.shopping_suggestion === undefined
+        ? null
+        : isString(obj.shopping_suggestion)
+          ? obj.shopping_suggestion
+          : null,
+  };
+}
+
+export function validateTrendCheck(data: unknown): TrendCheckResult | null {
+  if (!data || typeof data !== 'object') return null;
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.is_trendy !== 'boolean') return null;
+  if (typeof obj.trend_score !== 'number') return null;
+  if (!isString(obj.explanation)) return null;
+  if (!isString(obj.styling_tip)) return null;
+
+  let badge: TrendCheckResult['badge'] = 'Klassiker';
+  if (obj.is_trendy && obj.trend_score >= 7) badge = 'On Trend';
+  else if (!obj.is_trendy && obj.trend_score <= 4) badge = 'Veraltet';
+
+  return {
+    is_trendy: obj.is_trendy,
+    trend_score: obj.trend_score,
+    explanation: obj.explanation,
+    styling_tip: obj.styling_tip,
+    badge,
+  };
+}
+
+export function validateSavedOutfit(data: unknown): SavedOutfit | null {
+  if (!data || typeof data !== 'object') return null;
+  const obj = data as Record<string, unknown>;
+
+  if (!isString(obj.id)) return null;
+  if (!isString(obj.date)) return null;
+  if (!isString(obj.top)) return null;
+  if (!isString(obj.bottom)) return null;
+  if (obj.optional_layer !== null && obj.optional_layer !== undefined && !isString(obj.optional_layer))
+    return null;
+  if (!isString(obj.shoes_hint)) return null;
+  if (!isString(obj.reason)) return null;
+
+  return {
+    id: obj.id,
+    date: obj.date,
+    top: obj.top,
+    bottom: obj.bottom,
+    optional_layer: (obj.optional_layer as string | null) ?? null,
+    shoes_hint: obj.shoes_hint,
+    reason: obj.reason,
+    photoUri: isString(obj.photoUri) ? obj.photoUri : undefined,
+    caption: isString(obj.caption) ? obj.caption : undefined,
+    paletteColors: isStringArray(obj.paletteColors) ? obj.paletteColors : undefined,
+  };
+}
+
 export function validateDailyOutfit(data: unknown): DailyOutfitRecommendation | null {
   if (!data || typeof data !== 'object') return null;
   const obj = data as Record<string, unknown>;
@@ -140,9 +217,12 @@ export function validateSettings(data: unknown): UserSettings | null {
   if (typeof obj.notificationsEnabled !== 'boolean') return null;
   if (typeof obj.useLocation !== 'boolean') return null;
 
+  const language = obj.language === 'de' ? 'de' : 'en';
+
   return {
     notificationsEnabled: obj.notificationsEnabled,
     useLocation: obj.useLocation,
+    language,
   };
 }
 

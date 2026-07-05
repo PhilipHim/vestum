@@ -2,9 +2,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   ClothingCategory,
   ColorPaletteResult,
-  DailyOutfitRecommendation,
   GeminiErrorCode,
   OutfitHistoryEntry,
+  OutfitOfTheDay,
+  SavedOutfit,
+  StyleScoreResult,
+  TrendCheckResult,
   WardrobeItem,
   WeatherInfo,
 } from '@/src/types';
@@ -12,7 +15,8 @@ import {
   parseJsonFromText,
   validateClothingCategory,
   validateColorPalette,
-  validateDailyOutfit,
+  validateOutfitOfTheDay,
+  validateTrendCheck,
 } from '@/src/lib/validate';
 
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
@@ -52,44 +56,128 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-function outfitSystemPrompt(
-  palette: ColorPaletteResult | null,
-  weather: WeatherInfo,
+async function generateJson(prompt: string): Promise<unknown> {
+  assertApiKey();
+  const genAI = new GoogleGenerativeAI(API_KEY);
+  const model = genAI.getGenerativeModel({
+    model: MODEL,
+    generationConfig: { responseMimeType: 'application/json' },
+  });
+
+  const result = await withTimeout(model.generateContent([prompt]), TIMEOUT_MS);
+  return parseJsonFromText(result.response.text());
+}
+
+function handleGeminiError(err: unknown): never {
+  if (err instanceof Error) {
+    if (err.message === 'api_key_missing') throw err;
+    if (err.message === 'timeout') throw new Error('timeout');
+    if (err.message === 'invalid_response' || err.message === 'invalid_json') {
+      throw new Error('invalid_response');
+    }
+  }
+  throw new Error('network_error');
+}
+
+function outfitOfDayPrompt(
   wardrobe: WardrobeItem[],
-  history: OutfitHistoryEntry[],
+  weather: WeatherInfo,
+  recentOutfits: SavedOutfit[],
 ): string {
   const wardrobeJson = JSON.stringify(
     wardrobe.map((item) => ({
-      id: item.id,
+      name: `${item.color} ${item.type}`,
       type: item.type,
       color: item.color,
       season: item.season,
-      lastWorn: item.lastWorn ?? null,
-      wearCount: item.wearCount,
+    })),
+  );
+  const historyJson = JSON.stringify(
+    recentOutfits.slice(0, 7).map((o) => ({
+      date: o.date,
+      top: o.top,
+      bottom: o.bottom,
+      layer: o.optional_layer,
     })),
   );
 
-  const historyJson = JSON.stringify(history.slice(0, 50));
-  const paletteJson = palette ? JSON.stringify(palette) : 'null';
-
-  return `You are an expert fashion stylist. Based on the user's color palette, current weather, wardrobe, and wear history, return ONLY a valid JSON object with these fields:
+  return `Based on this wardrobe, today's weather (${weather.temperature}°C, ${weather.description}), and recent outfit history, suggest one specific outfit.
+Return ONLY valid JSON:
 {
-  "outfit_items": ["array of wardrobe item types/names to wear today"],
-  "outfit_description": "2-3 sentences describing the recommended outfit",
-  "weather_note": "brief note on how weather influences the choice",
-  "repetition_warning": "warning if any suggested items were worn in the last 7 days, or null",
-  "shopping_suggestion": "suggest a missing wardrobe piece that would unlock new outfits, or null"
+  "top": "item name from wardrobe or descriptive suggestion",
+  "bottom": "item name",
+  "optional_layer": "item name or null",
+  "shoes_hint": "color/type suggestion",
+  "reason": "one sentence why this works today",
+  "shopping_suggestion": "missing piece suggestion or null"
 }
 
-Rules:
-- Prefer items NOT worn in the last 7 days (check history).
-- Match colors to the user's seasonal palette when possible.
-- Weather: ${weather.temperature}C, ${weather.description}.
-- User palette: ${paletteJson}
-- Wardrobe: ${wardrobeJson}
-- Wear history: ${historyJson}
-
+Avoid repeating outfits worn in the last 7 days.
+Wardrobe: ${wardrobeJson}
+Recent history: ${historyJson}
 Return only JSON, no markdown.`;
+}
+
+export async function getOutfitOfTheDay(
+  wardrobe: WardrobeItem[],
+  weather: WeatherInfo,
+  recentOutfits: SavedOutfit[],
+): Promise<OutfitOfTheDay> {
+  try {
+    const parsed = await generateJson(outfitOfDayPrompt(wardrobe, weather, recentOutfits));
+    const validated = validateOutfitOfTheDay(parsed);
+    if (!validated) throw new Error('invalid_response');
+    return validated;
+  } catch (err) {
+    handleGeminiError(err);
+  }
+}
+
+export async function getTrendCheck(
+  type: string,
+  color: string,
+  season: string,
+): Promise<TrendCheckResult> {
+  const prompt = `Is a ${color} ${type} (${season} season) currently trendy in 2025/2026 fashion?
+Return ONLY valid JSON:
+{
+  "is_trendy": boolean,
+  "trend_score": number 1-10,
+  "explanation": "2 sentences",
+  "styling_tip": "one tip to make it work regardless of trend"
+}
+Return only JSON, no markdown.`;
+
+  try {
+    const parsed = await generateJson(prompt);
+    const validated = validateTrendCheck(parsed);
+    if (!validated) throw new Error('invalid_response');
+    return validated;
+  } catch (err) {
+    handleGeminiError(err);
+  }
+}
+
+export async function getStyleScoreTip(
+  score: number,
+  metrics: string,
+  lang: 'en' | 'de' = 'en',
+): Promise<string> {
+  const language = lang === 'de' ? 'German' : 'English';
+  const prompt = `A fashion app user has a Style Score of ${score}/100. Metrics: ${metrics}.
+Return ONE short ${language} sentence tip to improve their style. Return only the sentence, no JSON.`;
+
+  try {
+    assertApiKey();
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const model = genAI.getGenerativeModel({ model: MODEL });
+    const result = await withTimeout(model.generateContent([prompt]), TIMEOUT_MS);
+    return result.response.text().trim();
+  } catch {
+    return lang === 'de'
+      ? 'Variiere deine Farben und trage mehr unterschiedliche Teile aus deinem Kleiderschrank.'
+      : 'Mix up your colors and wear more different pieces from your wardrobe.';
+  }
 }
 
 export async function analyzeSelfie(
@@ -113,20 +201,12 @@ export async function analyzeSelfie(
       TIMEOUT_MS,
     );
 
-    const text = result.response.text();
-    const parsed = parseJsonFromText(text);
+    const parsed = parseJsonFromText(result.response.text());
     const validated = validateColorPalette(parsed);
     if (!validated) throw new Error('invalid_response');
     return validated;
   } catch (err) {
-    if (err instanceof Error) {
-      if (err.message === 'api_key_missing') throw err;
-      if (err.message === 'timeout') throw new Error('timeout');
-      if (err.message === 'invalid_response' || err.message === 'invalid_json') {
-        throw new Error('invalid_response');
-      }
-    }
-    throw new Error('network_error');
+    handleGeminiError(err);
   }
 }
 
@@ -151,57 +231,12 @@ export async function categorizeClothing(
       TIMEOUT_MS,
     );
 
-    const text = result.response.text();
-    const parsed = parseJsonFromText(text);
+    const parsed = parseJsonFromText(result.response.text());
     const validated = validateClothingCategory(parsed);
     if (!validated) throw new Error('invalid_response');
     return validated;
   } catch (err) {
-    if (err instanceof Error) {
-      if (err.message === 'api_key_missing') throw err;
-      if (err.message === 'timeout') throw new Error('timeout');
-      if (err.message === 'invalid_response' || err.message === 'invalid_json') {
-        throw new Error('invalid_response');
-      }
-    }
-    throw new Error('network_error');
-  }
-}
-
-export async function getDailyOutfitRecommendation(
-  palette: ColorPaletteResult | null,
-  weather: WeatherInfo,
-  wardrobe: WardrobeItem[],
-  history: OutfitHistoryEntry[],
-): Promise<DailyOutfitRecommendation> {
-  assertApiKey();
-
-  const genAI = new GoogleGenerativeAI(API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: MODEL,
-    generationConfig: { responseMimeType: 'application/json' },
-  });
-
-  try {
-    const result = await withTimeout(
-      model.generateContent([outfitSystemPrompt(palette, weather, wardrobe, history)]),
-      TIMEOUT_MS,
-    );
-
-    const text = result.response.text();
-    const parsed = parseJsonFromText(text);
-    const validated = validateDailyOutfit(parsed);
-    if (!validated) throw new Error('invalid_response');
-    return validated;
-  } catch (err) {
-    if (err instanceof Error) {
-      if (err.message === 'api_key_missing') throw err;
-      if (err.message === 'timeout') throw new Error('timeout');
-      if (err.message === 'invalid_response' || err.message === 'invalid_json') {
-        throw new Error('invalid_response');
-      }
-    }
-    throw new Error('network_error');
+    handleGeminiError(err);
   }
 }
 

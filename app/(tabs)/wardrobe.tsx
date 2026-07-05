@@ -1,6 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
+  ActionSheetIOS,
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,16 +21,22 @@ import { getCurrentSeason } from '@/src/lib/validate';
 import { categorizeClothing, mapGeminiError } from '@/src/services/geminiService';
 import { computeNeverWornPercent, getOutOfSeasonUnworn } from '@/src/services/storage';
 import { ACCENT, COLORS, ICON_STROKE } from '@/src/themes/rn-tokens';
-import type { WardrobeItem } from '@/src/types';
+import type { WardrobeFilter, WardrobeItem } from '@/src/types';
 
 export default function WardrobeScreen() {
-  const { wardrobe, addItem, deleteItem } = useApp();
+  const { wardrobe, addItem, deleteItem, toggleForSale, t } = useApp();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<WardrobeFilter>('all');
 
   const neverWornPercent = computeNeverWornPercent(wardrobe);
   const currentSeason = getCurrentSeason();
   const outOfSeason = getOutOfSeasonUnworn(wardrobe, currentSeason);
+
+  const filtered = useMemo(() => {
+    if (filter === 'for_sale') return wardrobe.filter((w) => w.forSale);
+    return wardrobe;
+  }, [wardrobe, filter]);
 
   const handleAdd = useCallback(
     async (source: 'camera' | 'library') => {
@@ -48,38 +56,75 @@ export default function WardrobeScreen() {
           season: category.season,
           createdAt: new Date().toISOString(),
           wearCount: 0,
+          forSale: false,
         };
         await addItem(item);
       } catch (err) {
         const code = err instanceof Error ? err.message : 'network_error';
         const mapped = mapGeminiError(code);
         if (mapped === 'api_key_missing') {
-          setError('Gemini API key missing. Add EXPO_PUBLIC_GEMINI_API_KEY to .env');
+          setError(t('errorApiKey'));
         } else {
-          setError('Analyse fehlgeschlagen, bitte erneut versuchen.');
+          setError(t('errorAnalysis'));
         }
       } finally {
         setLoading(false);
       }
     },
-    [addItem],
+    [addItem, t],
   );
 
-  const handleDelete = useCallback(
+  const confirmDelete = useCallback(
     (id: string) => {
-      Alert.alert('Remove item', 'Delete this piece from your wardrobe?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => void deleteItem(id) },
+      Alert.alert(t('wardrobeDeleteTitle'), t('wardrobeDeleteMsg'), [
+        { text: t('cancel'), style: 'cancel' },
+        { text: t('delete'), style: 'destructive', onPress: () => void deleteItem(id) },
       ]);
     },
-    [deleteItem],
+    [deleteItem, t],
+  );
+
+  const showContextMenu = useCallback(
+    (item: WardrobeItem) => {
+      const markLabel = item.forSale ? t('wardrobeUnmarkSale') : t('wardrobeMarkSale');
+
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: [t('cancel'), markLabel, t('delete')],
+            destructiveButtonIndex: 2,
+            cancelButtonIndex: 0,
+          },
+          (index) => {
+            if (index === 1) void toggleForSale(item.id);
+            if (index === 2) confirmDelete(item.id);
+          },
+        );
+      } else {
+        Alert.alert(item.type, undefined, [
+          { text: t('cancel'), style: 'cancel' },
+          { text: markLabel, onPress: () => void toggleForSale(item.id) },
+          { text: t('delete'), style: 'destructive', onPress: () => confirmDelete(item.id) },
+        ]);
+      }
+    },
+    [toggleForSale, confirmDelete, t],
   );
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-        <Text style={s.title}>Wardrobe</Text>
-        <Text style={s.subtitle}>Your digital closet</Text>
+        <Text style={s.title}>{t('wardrobeTitle')}</Text>
+        <Text style={s.subtitle}>{t('wardrobeSubtitle')}</Text>
+
+        <View style={s.filterRow}>
+          <FilterChip label={t('wardrobeAll')} active={filter === 'all'} onPress={() => setFilter('all')} />
+          <FilterChip
+            label={t('wardrobeForSale')}
+            active={filter === 'for_sale'}
+            onPress={() => setFilter('for_sale')}
+          />
+        </View>
 
         <View style={s.actionRow}>
           <TouchableOpacity
@@ -88,7 +133,7 @@ export default function WardrobeScreen() {
             activeOpacity={0.85}
           >
             <Camera size={20} color={COLORS.white} strokeWidth={ICON_STROKE} />
-            <Text style={s.actionBtnText}>Camera</Text>
+            <Text style={s.actionBtnText}>{t('camera')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={s.actionBtnSecondary}
@@ -96,7 +141,7 @@ export default function WardrobeScreen() {
             activeOpacity={0.85}
           >
             <ImagePlus size={20} color={ACCENT.primary} strokeWidth={ICON_STROKE} />
-            <Text style={s.actionBtnSecondaryText}>Gallery</Text>
+            <Text style={s.actionBtnSecondaryText}>{t('gallery')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -107,7 +152,7 @@ export default function WardrobeScreen() {
             <BarChart3 size={20} color={ACCENT.primary} strokeWidth={ICON_STROKE} />
             <View style={s.statMeta}>
               <Text style={s.statValue}>{neverWornPercent}%</Text>
-              <Text style={s.statLabel}>of clothes never worn</Text>
+              <Text style={s.statLabel}>{t('wardrobeNeverWorn')}</Text>
             </View>
           </View>
         </PremiumCard>
@@ -117,59 +162,72 @@ export default function WardrobeScreen() {
             <View style={s.seasonRow}>
               <Leaf size={20} color={COLORS.success} strokeWidth={ICON_STROKE} />
               <View style={s.seasonMeta}>
-                <Text style={s.seasonTitle}>Season tip</Text>
+                <Text style={s.seasonTitle}>{t('wardrobeSeasonTip')}</Text>
                 <Text style={s.seasonHint}>
-                  {outOfSeason.length} out-of-season unworn item
-                  {outOfSeason.length > 1 ? 's' : ''} — consider selling or donating.
+                  {t('wardrobeSeasonHint', { count: outOfSeason.length })}
                 </Text>
               </View>
             </View>
           </PremiumCard>
         )}
 
-        {wardrobe.length === 0 ? (
+        {filtered.length === 0 ? (
           <PremiumCard>
-            <Text style={s.emptyText}>No items yet. Upload your first piece above.</Text>
+            <Text style={s.emptyText}>
+              {filter === 'for_sale' ? t('wardrobeEmptyForSale') : t('wardrobeEmpty')}
+            </Text>
           </PremiumCard>
         ) : (
           <View style={s.grid}>
-            {wardrobe.map((item) => (
-              <WardrobeItemCard key={item.id} item={item} onDelete={handleDelete} />
+            {filtered.map((item) => (
+              <WardrobeItemCard key={item.id} item={item} onLongPress={showContextMenu} />
             ))}
           </View>
         )}
       </ScrollView>
 
-      {loading && <LoadingOverlay message="Categorizing item..." />}
+      {loading && <LoadingOverlay message={t('wardrobeCategorizing')} />}
     </SafeAreaView>
   );
 }
 
+function FilterChip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={[s.chip, active && s.chipActive]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
+      <Text style={[s.chipText, active && s.chipTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.bgDark,
+  root: { flex: 1, backgroundColor: COLORS.bgDark },
+  content: { padding: 20, paddingBottom: 40, gap: 16 },
+  title: { fontSize: 28, fontWeight: '700', color: COLORS.textDark, letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, color: COLORS.mutedDark, marginBottom: 4 },
+  filterRow: { flexDirection: 'row', gap: 8 },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.textDark,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: COLORS.mutedDark,
-    marginBottom: 4,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
+  chipActive: { borderColor: ACCENT.border, backgroundColor: ACCENT.soft },
+  chipText: { fontSize: 13, fontWeight: '600', color: COLORS.mutedDark },
+  chipTextActive: { color: ACCENT.primary },
+  actionRow: { flexDirection: 'row', gap: 12 },
   actionBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -180,11 +238,7 @@ const s = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
   },
-  actionBtnText: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '700',
-  },
+  actionBtnText: { color: COLORS.white, fontSize: 14, fontWeight: '700' },
   actionBtnSecondary: {
     flex: 1,
     flexDirection: 'row',
@@ -197,56 +251,15 @@ const s = StyleSheet.create({
     borderColor: ACCENT.border,
     backgroundColor: ACCENT.soft,
   },
-  actionBtnSecondaryText: {
-    color: ACCENT.primary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  statMeta: {
-    gap: 2,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: ACCENT.primary,
-  },
-  statLabel: {
-    fontSize: 13,
-    color: COLORS.mutedDark,
-  },
-  seasonRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  seasonMeta: {
-    flex: 1,
-    gap: 4,
-  },
-  seasonTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textDark,
-  },
-  seasonHint: {
-    fontSize: 13,
-    color: COLORS.mutedDark,
-    lineHeight: 18,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-  },
-  emptyText: {
-    color: COLORS.mutedDark,
-    fontSize: 14,
-    textAlign: 'center',
-  },
+  actionBtnSecondaryText: { color: ACCENT.primary, fontSize: 14, fontWeight: '700' },
+  statRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  statMeta: { gap: 2 },
+  statValue: { fontSize: 24, fontWeight: '700', color: ACCENT.primary },
+  statLabel: { fontSize: 13, color: COLORS.mutedDark },
+  seasonRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  seasonMeta: { flex: 1, gap: 4 },
+  seasonTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textDark },
+  seasonHint: { fontSize: 13, color: COLORS.mutedDark, lineHeight: 18 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
+  emptyText: { color: COLORS.mutedDark, fontSize: 14, textAlign: 'center' },
 });

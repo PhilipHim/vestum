@@ -66,6 +66,13 @@
         {
           "locationWhenInUsePermission": "Vestum uses your location to provide weather-based outfit suggestions."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#D7A5B9"
+        }
       ]
     ],
     "experiments": {

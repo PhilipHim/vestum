@@ -13,7 +13,7 @@ import { ACCENT, COLORS, ICON_STROKE } from '@/src/themes/rn-tokens';
 import type { ColorPaletteResult } from '@/src/types';
 
 export default function ColorAiScreen() {
-  const { setPalette } = useApp();
+  const { setPalette, t } = useApp();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ColorPaletteResult | null>(null);
@@ -39,15 +39,15 @@ export default function ColorAiScreen() {
         const code = err instanceof Error ? err.message : 'network_error';
         const mapped = mapGeminiError(code);
         if (mapped === 'api_key_missing') {
-          setError('Gemini API key missing. Add EXPO_PUBLIC_GEMINI_API_KEY to .env');
+          setError(t('errorApiKey'));
         } else {
-          setError('Analyse fehlgeschlagen, bitte erneut versuchen.');
+          setError(t('errorAnalysis'));
         }
       } finally {
         setLoading(false);
       }
     },
-    [setPalette],
+    [setPalette, t],
   );
 
   return (
@@ -55,11 +55,9 @@ export default function ColorAiScreen() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <View style={s.header}>
           <Sparkles size={28} color={ACCENT.primary} strokeWidth={ICON_STROKE} />
-          <Text style={s.title}>Color AI</Text>
+          <Text style={s.title}>{t('colorAiTitle')}</Text>
         </View>
-        <Text style={s.subtitle}>
-          Upload a selfie to discover your perfect seasonal color palette.
-        </Text>
+        <Text style={s.subtitle}>{t('colorAiSubtitle')}</Text>
 
         <View style={s.actionRow}>
           <TouchableOpacity
@@ -68,7 +66,7 @@ export default function ColorAiScreen() {
             activeOpacity={0.85}
           >
             <Camera size={20} color={COLORS.white} strokeWidth={ICON_STROKE} />
-            <Text style={s.actionBtnText}>Take Selfie</Text>
+            <Text style={s.actionBtnText}>{t('colorAiTakeSelfie')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={s.actionBtnSecondary}
@@ -76,7 +74,7 @@ export default function ColorAiScreen() {
             activeOpacity={0.85}
           >
             <ImagePlus size={20} color={ACCENT.primary} strokeWidth={ICON_STROKE} />
-            <Text style={s.actionBtnSecondaryText}>Upload</Text>
+            <Text style={s.actionBtnSecondaryText}>{t('colorAiUpload')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -91,28 +89,28 @@ export default function ColorAiScreen() {
         {result && (
           <>
             <PremiumCard>
-              <Text style={s.seasonLabel}>Your Season</Text>
+              <Text style={s.seasonLabel}>{t('colorAiYourSeason')}</Text>
               <Text style={s.season}>{result.season}</Text>
               <View style={s.traits}>
-                <Trait label="Skin" value={result.skin_tone} />
-                <Trait label="Hair" value={result.hair_color} />
-                <Trait label="Eyes" value={result.eye_color} />
+                <Trait label={t('colorAiSkin')} value={result.skin_tone} />
+                <Trait label={t('colorAiHair')} value={result.hair_color} />
+                <Trait label={t('colorAiEyes')} value={result.eye_color} />
               </View>
               <Text style={s.explanation}>{result.explanation}</Text>
             </PremiumCard>
 
             <PremiumCard>
-              <ColorSwatch colors={result.palette} label="Your Palette" />
+              <ColorSwatch colors={result.palette} label={t('colorAiYourPalette')} />
             </PremiumCard>
 
             <PremiumCard>
-              <ColorSwatch colors={result.avoid_colors} label="Colors to Avoid" size={36} />
+              <ColorSwatch colors={result.avoid_colors} label={t('colorAiAvoid')} size={36} />
             </PremiumCard>
           </>
         )}
       </ScrollView>
 
-      {loading && <LoadingOverlay message="Analyzing your colors..." />}
+      {loading && <LoadingOverlay message={t('colorAiAnalyzing')} />}
     </SafeAreaView>
   );
 }

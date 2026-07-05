@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AlertTriangle } from 'lucide-react-native';
+import { useApp } from '@/src/context/AppContext';
 import { ACCENT, COLORS, ICON_STROKE } from '@/src/themes/rn-tokens';
 
 interface ErrorCardProps {
@@ -8,17 +9,17 @@ interface ErrorCardProps {
   onRetry?: () => void;
 }
 
-export default function ErrorCard({
-  message = 'Analyse fehlgeschlagen, bitte erneut versuchen.',
-  onRetry,
-}: ErrorCardProps) {
+export default function ErrorCard({ message, onRetry }: ErrorCardProps) {
+  const { t } = useApp();
+  const displayMessage = message ?? t('errorAnalysis');
+
   return (
     <View style={s.card}>
       <AlertTriangle size={24} color={COLORS.error} strokeWidth={ICON_STROKE} />
-      <Text style={s.title}>{message}</Text>
+      <Text style={s.title}>{displayMessage}</Text>
       {onRetry && (
         <TouchableOpacity onPress={onRetry} activeOpacity={0.7}>
-          <Text style={s.retry}>Erneut versuchen</Text>
+          <Text style={s.retry}>{t('retry')}</Text>
         </TouchableOpacity>
       )}
     </View>
