@@ -72,10 +72,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setColorPaletteState(palette);
     setSettingsState(userSettings);
     setOnboardedState(onboardedFlag);
-
-    const weatherData = await fetchWeather(userSettings.useLocation);
-    setWeather(weatherData);
     setReady(true);
+
+    void fetchWeather(userSettings.useLocation).then(setWeather);
   }, []);
 
   useEffect(() => {

@@ -1,8 +1,15 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { Home, Shirt, Sparkles, User } from 'lucide-react-native';
+import { useApp } from '@/src/context/AppContext';
 import { ACCENT, COLORS, ICON_STROKE } from '@/src/themes/rn-tokens';
 
 export default function TabLayout() {
+  const { onboarded } = useApp();
+
+  if (onboarded === false) {
+    return <Redirect href="/onboarding" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

@@ -30,7 +30,7 @@ export function RoseMistGlow({ size = 320 }: { size?: number }) {
   );
 }
 
-/** Shared shark + branding — used on splash and loading screen */
+/** Shared shark + branding — used on splash and loading overlay */
 export function SplashContent({ subtitle }: { subtitle?: string }) {
   return (
     <View style={s.content}>
@@ -49,36 +49,42 @@ export function SplashContent({ subtitle }: { subtitle?: string }) {
 }
 
 interface SplashScreenProps {
+  ready: boolean;
   onComplete?: () => void;
 }
 
 /**
- * Atrium/Cives boot splash. No expo-splash-screen API — renders immediately
- * as the only root view so the shark is always visible on QR scan / cold start.
+ * Boot splash overlay. Data loads underneath; fade starts only after min show time AND app ready.
  */
-export default function SplashScreen({ onComplete }: SplashScreenProps) {
+export default function SplashScreen({ ready, onComplete }: SplashScreenProps) {
   const [visible, setVisible] = useState(true);
+  const [minElapsed, setMinElapsed] = useState(false);
   const opacity = useRef(new Animated.Value(1)).current;
+  const fading = useRef(false);
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => {
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: FADE_DURATION_MS,
-        useNativeDriver: true,
-      }).start(() => {
-        setVisible(false);
-        onComplete?.();
-      });
-    }, SPLASH_DURATION_MS);
+    const timer = setTimeout(() => setMinElapsed(true), SPLASH_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
-    return () => clearTimeout(fadeTimer);
-  }, [onComplete, opacity]);
+  useEffect(() => {
+    if (!minElapsed || !ready || fading.current) return;
+    fading.current = true;
+
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: FADE_DURATION_MS,
+      useNativeDriver: true,
+    }).start(() => {
+      setVisible(false);
+      onComplete?.();
+    });
+  }, [minElapsed, ready, onComplete, opacity]);
 
   if (!visible) return null;
 
   return (
-    <Animated.View style={[s.root, { opacity }]} accessibilityElementsHidden>
+    <Animated.View style={[s.overlay, { opacity }]} accessibilityElementsHidden pointerEvents="none">
       <SplashContent />
     </Animated.View>
   );
@@ -97,8 +103,9 @@ const glow = StyleSheet.create({
 });
 
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 9999,
     backgroundColor: COLORS.bgDark,
   },
   content: {
