@@ -9,14 +9,14 @@ import type {
 } from '@/src/types';
 
 export const STORAGE_KEYS = {
-  wardrobe: 'vestum_wardrobe',
-  outfitHistory: 'vestum_outfit_history',
-  savedOutfits: 'vestum_saved_outfits',
-  outfitOfDay: 'vestum_outfit_of_day',
-  outfitOfDayDate: 'vestum_outfit_of_day_date',
-  colorPalette: 'vestum_color_palette',
-  settings: 'vestum_settings',
-  onboarded: 'vestum_onboarded_v1',
+  wardrobe: 'lethe_wardrobe',
+  outfitHistory: 'lethe_outfit_history',
+  savedOutfits: 'lethe_saved_outfits',
+  outfitOfDay: 'lethe_outfit_of_day',
+  outfitOfDayDate: 'lethe_outfit_of_day_date',
+  colorPalette: 'lethe_color_palette',
+  settings: 'lethe_settings',
+  onboarded: 'lethe_onboarded_v1',
 } as const;
 
 const DEFAULT_SETTINGS: UserSettings = {

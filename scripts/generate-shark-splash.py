@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate jph-shark-splash.png tinted to Vestum Rose Mist palette."""
+"""Generate jph-shark-splash.png tinted to Lethe Rose Mist palette."""
 from __future__ import annotations
 
 from pathlib import Path

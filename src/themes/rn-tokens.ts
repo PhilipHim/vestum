@@ -1,5 +1,5 @@
 /**
- * React Native runtime tokens — keep in sync with vestum.theme.ts
+ * React Native runtime tokens — keep in sync with lethe.theme.ts
  * Palette: Rose Mist
  */
 

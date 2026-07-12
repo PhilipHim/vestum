@@ -140,7 +140,7 @@ export default function ProfileScreen() {
           )}
         </PremiumCard>
 
-        <Text style={s.footer}>Vestum by JPH Product Studio</Text>
+        <Text style={s.footer}>Lethe by JPH Product Studio</Text>
 
         {__DEV__ && (
           <TouchableOpacity

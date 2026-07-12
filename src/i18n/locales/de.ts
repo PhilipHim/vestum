@@ -44,7 +44,7 @@ const de: Translations = {
     'Lade ein Selfie hoch und lass AI deinen Hautton, Haare und Augen analysieren, um deine perfekte Farbpalette zu finden.',
   onboarding2Title: 'Baue deinen digitalen Kleiderschrank',
   onboarding2Body:
-    'Fotografiere deine Kleidung und Vestum kategorisiert jedes Stück automatisch nach Typ, Farbe und Saison.',
+    'Fotografiere deine Kleidung und Lethe kategorisiert jedes Stück automatisch nach Typ, Farbe und Saison.',
   onboarding3Title: 'Jeden Tag smart anziehen',
   onboarding3Body:
     'Erhalte wetterbasierte Outfit-Vorschläge, die zu deiner Palette passen und keine Wiederholungen der letzten 7 Tage.',
@@ -118,9 +118,9 @@ const de: Translations = {
   weekFri: 'Fr',
   weekSat: 'Sa',
   weekSun: 'So',
-  notifAutumnTitle: 'Vestum',
+  notifAutumnTitle: 'Lethe',
   notifAutumnBody: 'Herbst ist da! Zeit deinen Kleiderschrank umzuräumen — deine Sommerkleidung wartet.',
-  notifSpringTitle: 'Vestum',
+  notifSpringTitle: 'Lethe',
   notifSpringBody: 'Frühling! Hol deine leichten Sachen raus — wir helfen dir beim Umräumen.',
 };
 

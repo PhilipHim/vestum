@@ -1,15 +1,15 @@
 import { coreTheme } from './core.theme';
 
 // =======================================================
-// Vestum Theme
+// Lethe Theme
 // Palette: Rose Mist
 // =======================================================
 
-export const vestumTheme = {
+export const letheTheme = {
   ...coreTheme,
 
   product: {
-    name: 'Vestum',
+    name: 'Lethe',
     palette: 'Rose Mist',
   },
 

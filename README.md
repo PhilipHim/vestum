@@ -10,7 +10,7 @@
 
 </p>
 
-<h1 align="center"><strong>Vestum</strong></h1>
+<h1 align="center"><strong>Lethe</strong></h1>
 
 <p align="center">
   Your AI color theorist and smart digital wardrobe.
@@ -31,7 +31,7 @@
 
 ## Overview
 
-Vestum is an AI-powered fashion and wardrobe assistant that helps you dress with confidence. Analyze your skin tone, hair, and eyes to discover your perfect seasonal color palette, build a digital closet, and get weather-aware outfit suggestions powered by Google Gemini.
+Lethe is an AI-powered fashion and wardrobe assistant that helps you dress with confidence. Analyze your skin tone, hair, and eyes to discover your perfect seasonal color palette, build a digital closet, and get weather-aware outfit suggestions powered by Google Gemini.
 
 Built for anyone who wants smarter style decisions without the guesswork.
 
@@ -56,7 +56,7 @@ Built for anyone who wants smarter style decisions without the guesswork.
 | **AI** | Google Gemini API (`gemini-2.5-flash`) |
 | **Storage** | AsyncStorage (local persistence) |
 | **Icons** | Lucide React Native (stroke 1.5px) |
-| **Theme** | Rose Mist — `src/themes/vestum.theme.ts` |
+| **Theme** | Rose Mist — `src/themes/lethe.theme.ts` |
 
 ## Getting Started
 
@@ -64,8 +64,8 @@ Built for anyone who wants smarter style decisions without the guesswork.
 
 ```bash
 # Clone the repository
-git clone https://github.com/PhilipHim/vestum.git
-cd vestum
+git clone https://github.com/PhilipHim/lethe.git
+cd lethe
 
 # Install dependencies
 npm install
@@ -91,7 +91,7 @@ Create a `.env` file in the project root:
 
 ## JPH Product Studio
 
-Vestum is part of the [JPH Product Studio](https://github.com/PhilipHim) ecosystem — a collection of thoughtfully designed, AI-powered apps built with consistent Atlas UI theming, premium UX, and intentional craft.
+Lethe is part of the [JPH Product Studio](https://github.com/PhilipHim) ecosystem — a collection of thoughtfully designed, AI-powered apps built with consistent Atlas UI theming, premium UX, and intentional craft.
 
 Each JPH product ships with its own accent palette while sharing core design tokens, loading screens, feedback flows, and onboarding patterns.
 

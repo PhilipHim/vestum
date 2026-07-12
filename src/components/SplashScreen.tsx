@@ -41,7 +41,7 @@ export function SplashContent({ subtitle }: { subtitle?: string }) {
         resizeMode="contain"
         accessibilityIgnoresInvertColors
       />
-      <Text style={s.title}>Vestum</Text>
+      <Text style={s.title}>Lethe</Text>
       <Text style={s.tagline}>by JPH</Text>
       {subtitle ? <Text style={s.subtitle}>{subtitle}</Text> : null}
     </View>

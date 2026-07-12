@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Vestum",
-    "slug": "vestum",
+    "name": "Lethe",
+    "slug": "lethe",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "vestum",
+    "scheme": "lethe",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -16,9 +16,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Vestum needs camera access to scan clothing and take selfies for color analysis.",
-        "NSPhotoLibraryUsageDescription": "Vestum needs photo library access to upload clothing and selfies.",
-        "NSLocationWhenInUseUsageDescription": "Vestum uses your location to provide weather-based outfit suggestions."
+        "NSCameraUsageDescription": "Lethe needs camera access to scan clothing and take selfies for color analysis.",
+        "NSPhotoLibraryUsageDescription": "Lethe needs photo library access to upload clothing and selfies.",
+        "NSLocationWhenInUseUsageDescription": "Lethe uses your location to provide weather-based outfit suggestions."
       }
     },
     "android": {
@@ -52,19 +52,19 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Vestum needs camera access to scan clothing and take selfies for color analysis."
+          "cameraPermission": "Lethe needs camera access to scan clothing and take selfies for color analysis."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Vestum needs photo library access to upload clothing and selfies."
+          "photosPermission": "Lethe needs photo library access to upload clothing and selfies."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Vestum uses your location to provide weather-based outfit suggestions."
+          "locationWhenInUsePermission": "Lethe uses your location to provide weather-based outfit suggestions."
         }
       ],
       [
